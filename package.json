@@ -1,0 +1,18 @@
+{
+  "name": "com.sowa705.roadtoolkit",
+  "version": "0.1.0",
+  "displayName": "RoadToolkit",
+  "description": "Procedural road generation toolkit for Unity",
+  "unity": "2019.1",
+  "unityRelease": "0b5",
+  "documentationUrl": "https://github.com/sowa705/RoadToolkit/wiki",
+  "licensesUrl": "https://github.com/sowa705/RoadToolkit",
+  "keywords": [
+    "road",
+    "procedural"
+  ],
+  "author": {
+    "name": "Łukasz Sowa",
+    "url": "https://github.com/sowa705/RoadToolkit"
+  }
+}
