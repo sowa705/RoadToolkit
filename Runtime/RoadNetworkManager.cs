@@ -18,15 +18,15 @@ public class RoadNetworkManager : MonoBehaviour
         roadNetwork.AddNode(new RoadNode {NodeID = 7, Position = new Vector3(40, 0,0)});
         roadNetwork.AddNode(new RoadNode {NodeID = 8, Position = new Vector3(10, 0,60)});
 
-        roadNetwork.AddEdge(new RoadEdge(1, 2, 4));
-        roadNetwork.AddEdge(new RoadEdge(2, 3, 4));
-        roadNetwork.AddEdge(new RoadEdge(3, 4, 4));
-        roadNetwork.AddEdge(new RoadEdge(4, 5, 4));
-        roadNetwork.AddEdge(new RoadEdge(4, 2, 4));
-        roadNetwork.AddEdge(new RoadEdge(4, 6, 4));
-        roadNetwork.AddEdge(new RoadEdge(7, 6, 4));
-        roadNetwork.AddEdge(new RoadEdge(7, 5, 4));
-        roadNetwork.AddEdge(new RoadEdge(3, 8, 4));
+        roadNetwork.AddEdge(new RoadEdge(1, 1, 2, 4));
+        roadNetwork.AddEdge(new RoadEdge(2, 2, 3, 4));
+        roadNetwork.AddEdge(new RoadEdge(3, 3, 4, 4));
+        roadNetwork.AddEdge(new RoadEdge(4, 4, 5, 4));
+        roadNetwork.AddEdge(new RoadEdge(5, 4, 2, 4));
+        roadNetwork.AddEdge(new RoadEdge(6, 4, 6, 4));
+        roadNetwork.AddEdge(new RoadEdge(7, 7, 6, 4));
+        roadNetwork.AddEdge(new RoadEdge(8, 7, 5, 4));
+        roadNetwork.AddEdge(new RoadEdge(9, 3, 8, 4));
         
         Debug.Log("Number of nodes: " + roadNetwork.Nodes.Count);
         Debug.Log("Number of edges: " + roadNetwork.Edges.Count);

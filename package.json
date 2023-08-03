@@ -1,6 +1,6 @@
 {
   "name": "com.sowa705.roadtoolkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "RoadToolkit",
   "description": "Procedural road generation toolkit for Unity",
   "unity": "2019.1",

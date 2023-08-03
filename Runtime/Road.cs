@@ -4,6 +4,7 @@ using System.Linq;
 public class Road
 {
     public List<int> NodeIDs = new List<int>();
+    public List<int> EdgeIDs = new List<int>();
 
     public override int GetHashCode()
     {

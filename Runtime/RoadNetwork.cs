@@ -17,12 +17,12 @@ public class RoadNetwork
     
     public RoadNode CreateNode(Vector3 position)
     {
-        var node = new RoadNode {NodeID = GenerateID(), Position = position};
+        var node = new RoadNode {NodeID = GenerateNodeID(), Position = position};
         Nodes.Add(node);
         return node;
     }
     
-    int GenerateID()
+    int GenerateNodeID()
     {
         int id = 0;
         foreach (var node in Nodes)
@@ -36,6 +36,27 @@ public class RoadNetwork
         return id + 1;
     }
     
+    int GenerateEdgeID()
+    {
+        int id = 0;
+        foreach (var edge in Edges)
+        {
+            if (edge.EdgeID > id)
+            {
+                id = edge.EdgeID;
+            }
+        }
+        
+        return id + 1;
+    }
+    
+    public RoadEdge CreateEdge(int startNodeID, int endNodeID, float width)
+    {
+        var edge = new RoadEdge (GenerateEdgeID(), startNodeID, endNodeID, width);
+        Edges.Add(edge);
+        return edge;
+    }
+
     public void AddNode(RoadNode node)
     {
         Nodes.Add(node);
@@ -68,10 +89,23 @@ public class RoadNetwork
         var node = Nodes.IndexOf(GetNode(nodeID));
         Nodes[node] = new RoadNode {NodeID = nodeID, Position = position};
     }
+
+    /// <summary>
+    /// List of all edges that directly connect elements of the node list
+    /// </summary>
+    public List<RoadEdge> GetEdgesBetween(List<int> nodes)
+    {
+        return Edges.Where(e => nodes.Contains(e.StartNodeID) && nodes.Contains(e.EndNodeID)).ToList();
+    }
     
     public RoadEdge GetEdge(int startNodeID, int endNodeID)
     {
         return Edges.Find(e => (e.StartNodeID == startNodeID && e.EndNodeID == endNodeID) || (e.StartNodeID == endNodeID && e.EndNodeID == startNodeID));
+    }
+    
+    public RoadEdge GetEdge(int edgeID)
+    {
+        return Edges.Find(e => e.EdgeID == edgeID);
     }
  
     /// <summary>
@@ -112,6 +146,7 @@ public class RoadNetwork
 
         var nextNodeId = edge.StartNodeID == comingFromNodeId ? edge.EndNodeID : edge.StartNodeID;
         road.NodeIDs.Add(nextNodeId);
+        road.EdgeIDs.Add(edge.EdgeID);
 
         if (!IsIntersection(Nodes.Find(n => n.NodeID == nextNodeId)))
         {
@@ -163,7 +198,7 @@ public class RoadNetwork
             Edges.Remove(edge);
         }
         var width = edgesToRemove[0].Width;
-        AddEdge(new RoadEdge(start.NodeID, newNode.NodeID, width));
-        AddEdge(new RoadEdge(newNode.NodeID, end.NodeID, width));
+        CreateEdge(start.NodeID, newNode.NodeID, width);
+        CreateEdge(newNode.NodeID, end.NodeID, width);
     }
 }

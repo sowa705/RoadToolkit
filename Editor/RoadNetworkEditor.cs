@@ -18,6 +18,28 @@ public class RoadNetworkEditor : Editor
         {
             roadGenerator.GenerateRoadNetwork();
         }
+        if(roadGenerator.roadMeshGenerator != null)
+            GUILayout.Label("Generation time: " + roadGenerator.roadMeshGenerator.LastGenerationTime.ToString("00.0") + " ms");
+
+        if (selectedNodes.Count >= 2)
+        {
+            GUILayout.Label("Edge properties", EditorStyles.boldLabel);
+
+            var edges = roadGenerator.roadNetwork.GetEdgesBetween(selectedNodes.ToList());
+            
+            GUILayout.Label("Number of edges: " + edges.Count);
+            
+            var averageWidth = edges.Average(edge => edge.Width);
+            var newWidth = EditorGUILayout.Slider("Width", averageWidth, 2f, 20f);
+            if (newWidth != averageWidth)
+            {
+                foreach (var edge in edges)
+                {
+                    edge.Width = newWidth;
+                }
+                roadGenerator.GenerateRoadNetwork();
+            }
+        }
     }
 
     public void OnSceneGUI()
@@ -119,7 +141,7 @@ public class RoadNetworkEditor : Editor
         {
             var node1 = roadNetwork.GetNode(selectedNodes.Pop());
             var node2 = roadNetwork.GetNode(selectedNodes.Pop());
-            roadNetwork.AddEdge(new RoadEdge(node1.NodeID, node2.NodeID, 4f));
+            roadNetwork.CreateEdge(node1.NodeID, node2.NodeID, 4f);
             roadGenerator.GenerateRoadNetwork();
         }
         
@@ -150,7 +172,7 @@ public class RoadNetworkEditor : Editor
             if (Physics.Raycast(ray, out hit, 1000f))
             {
                 var newNode = roadNetwork.CreateNode(hit.point+Vector3.up*0.5f);
-                roadNetwork.AddEdge(new RoadEdge(node.NodeID, newNode.NodeID, 4f));
+                roadNetwork.CreateEdge(node.NodeID, newNode.NodeID, 4f);
                 roadGenerator.GenerateRoadNetwork();
                 
                 // select the new node

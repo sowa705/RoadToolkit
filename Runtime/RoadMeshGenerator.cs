@@ -1,19 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 [Serializable]
 public class RoadMeshSettings
 {
     public int resolution = 15;
-    public float distanceFromIntersection = 3f;
 }
 
 public class RoadMeshGenerator
 {
     RoadNetwork roadNetwork;
     public RoadMeshSettings settings = new RoadMeshSettings();
+    public float LastGenerationTime { get; private set; }
     
     class MeshObject
     {
@@ -28,6 +30,8 @@ public class RoadMeshGenerator
 
     public void GenerateMeshes(GameObject root)
     {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
         // destroy all children
         for (int i = root.transform.childCount - 1; i >= 0; --i)
         {
@@ -57,6 +61,8 @@ public class RoadMeshGenerator
             meshObject.AddComponent<MeshRenderer>().material = new Material(Shader.Find("Standard"));
             meshObject.AddComponent<MeshCollider>();
         }
+        stopwatch.Stop();
+        LastGenerationTime = (float)stopwatch.Elapsed.TotalMilliseconds;
     }
     
     MeshObject GenerateIntersectionMesh(RoadNode node)
@@ -64,6 +70,7 @@ public class RoadMeshGenerator
         var meshObject = new MeshObject();
         
         var adjacentNodes = roadNetwork.GetAdjacentNodes(node);
+        var distanceFromIntersection = GenerateIntersectionDistance(node);
         var vertices = new List<Vector3>();
         
         foreach (var adjacentNode in adjacentNodes)
@@ -75,8 +82,8 @@ public class RoadMeshGenerator
             var perpendicular = new Vector3(direction.z, 0, -direction.x);
             var perpendicular2 = new Vector3(-direction.z, 0, direction.x);
             
-            var vertex1 = node.Position + perpendicular * roadWidth / 2f + direction * settings.distanceFromIntersection;
-            var vertex2 = node.Position + perpendicular2 * roadWidth / 2f + direction * settings.distanceFromIntersection;
+            var vertex1 = node.Position + perpendicular * roadWidth / 2f + direction * distanceFromIntersection;
+            var vertex2 = node.Position + perpendicular2 * roadWidth / 2f + direction * distanceFromIntersection;
 
             vertices.Add(vertex1);
             vertices.Add(vertex2);
@@ -100,14 +107,24 @@ public class RoadMeshGenerator
         meshObject.position = node.Position;
         return meshObject;
     }
+
+    private float GenerateIntersectionDistance(RoadNode node)
+    {
+        var adjacentNodes = roadNetwork.GetAdjacentNodes(node);
+        var adjacentEdges = adjacentNodes.Select(n => roadNetwork.GetEdge(node.NodeID, n.NodeID)).ToList();
+        var maxRoadWidth = adjacentEdges.Max(e => e.Width);
+        var distanceFromIntersection = maxRoadWidth / 1.41f;
+        
+        return distanceFromIntersection;
+    }
+    
     public List<SplinePoint> GenerateRoadSpline(Road road, float startOffset, float endOffset)
     {
         var splinePoints = new List<SplinePoint>();
         var nodes = road.NodeIDs.Select(id => roadNetwork.GetNode(id)).ToList();
         var positions = nodes.Select(n => n.Position).ToList();
+        var widths = road.EdgeIDs.Select(id => roadNetwork.GetEdge(id).Width).ToList();
 
-        var width = 4;
-        
         // Calculate start and end positions with offsets
         Vector3 startDirection = (nodes[1].Position - nodes[0].Position).normalized;
         Vector3 endDirection = (nodes[nodes.Count - 2].Position - nodes[nodes.Count - 1].Position).normalized;
@@ -117,7 +134,7 @@ public class RoadMeshGenerator
         endPosition.y = nodes[nodes.Count - 1].Position.y;
         positions[0] = startPosition;
         positions[positions.Count - 1] = endPosition;
-        
+
         // Add start position as the first SplinePoint
         //splinePoints.Add(new SplinePoint { Position = startPosition, Direction = startDirection, Perpendicular = Vector3.Cross(startDirection, Vector3.up), Width = width });
         
@@ -128,6 +145,9 @@ public class RoadMeshGenerator
             Vector3 p1 = positions[i];
             Vector3 p2 = positions[i + 1];
             Vector3 p3 = i < positions.Count - 2 ? positions[i + 2] : endPosition;
+            
+            float width0 = i > 0 ? widths[i - 1] : widths[i];
+            float width1 = widths[i];
 
             for (int j = 0; j < settings.resolution; j++)
             {
@@ -136,16 +156,20 @@ public class RoadMeshGenerator
                 float t3 = t2 * t;
 
                 Vector3 position = 0.5f * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
-                Vector3 tangent = 0.5f * (-p0 + p2 + 2 * (2 * p0 - 5 * p1 + 4 * p2 - p3) * t + 3 * (-p0 + 3 * p1 - 3 * p2 + p3) * t2);
+                Vector3 tangent = 0.5f * (-p0 + p2 + (2 * p0 - 5 * p1 + 4 * p2 - p3) * (2 * t) + (-p0 + 3 * p1 - 3 * p2 + p3) * (3 * t2));
                 Vector3 direction = tangent.normalized;
                 Vector3 perpendicular = Vector3.Cross(direction, Vector3.up).normalized;
-
+                
+                float width = Mathf.Lerp(width0, width1, t);
+                
                 splinePoints.Add(new SplinePoint { Position = position, Direction = direction, Perpendicular = perpendicular, Width = width });
             }
         }
         
+        var endWidth = widths[widths.Count - 1];
+        
         // Add end position as the last SplinePoint
-        splinePoints.Add(new SplinePoint { Position = endPosition, Direction = endDirection, Perpendicular = -Vector3.Cross(endDirection, Vector3.up), Width = width });
+        splinePoints.Add(new SplinePoint { Position = endPosition, Direction = endDirection, Perpendicular = -Vector3.Cross(endDirection, Vector3.up), Width = endWidth });
 
         return splinePoints;
     }
@@ -157,8 +181,8 @@ public class RoadMeshGenerator
         var firstNode = roadNetwork.GetNode(road.NodeIDs.First());
         var lastNode = roadNetwork.GetNode(road.NodeIDs.Last());
 
-        var startOffset = roadNetwork.IsIntersection(firstNode) ? settings.distanceFromIntersection : 0;
-        var endOffset = roadNetwork.IsIntersection(lastNode) ? settings.distanceFromIntersection : 0;
+        var startOffset = roadNetwork.IsIntersection(firstNode) ? GenerateIntersectionDistance(firstNode) : 0;
+        var endOffset = roadNetwork.IsIntersection(lastNode) ? GenerateIntersectionDistance(lastNode) : 0;
         
         var splinePoints = GenerateRoadSpline(road, startOffset, endOffset);
         

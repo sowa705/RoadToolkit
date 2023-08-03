@@ -6,12 +6,14 @@ using System;
 [Serializable]
 public class RoadEdge
 {
+    public int EdgeID;
     public int StartNodeID;
     public int EndNodeID;
     public float Width;
     
-    public RoadEdge(int startNodeID, int endNodeID, float width)
+    public RoadEdge(int edgeID, int startNodeID, int endNodeID, float width)
     {
+        EdgeID = edgeID;
         StartNodeID = startNodeID;
         EndNodeID = endNodeID;
         Width = width;
