@@ -8,7 +8,7 @@ RoadToolkit is delivered as a modern UPM package, follow [official Unity documen
 ## Features
 - Road graph
 - Procedueral mesh generation
-  - Catmul-Rom spline interpolation
+  - Catmull-Rom spline interpolation
   - Procedural intersections
 - Editor tools
 - Works in editor and runtime
